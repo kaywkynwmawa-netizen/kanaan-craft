@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>KANAAN CRAFT</title>
+<style>
+:root{--panel:rgba(18,25,35,.82);--line:rgba(255,255,255,.25)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#87ceeb;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;touch-action:none}
+#game{position:absolute;inset:0}canvas{display:block;width:100%;height:100%}
+#top{position:absolute;top:env(safe-area-inset-top,8px);left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none}
+.panel{background:var(--panel);color:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;backdrop-filter:blur(5px);box-shadow:0 4px 14px #0002}
+#brand{font-weight:900;letter-spacing:.5px;font-size:16px}#stats{font-size:12px;line-height:1.7;text-align:left}
+#hint{position:absolute;top:68px;left:50%;transform:translateX(-50%);max-width:90%;text-align:center;color:white;background:#111a;padding:7px 12px;border-radius:10px;font-size:12px;pointer-events:none;white-space:nowrap}
+#crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);pointer-events:none}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff;box-shadow:0 1px 3px #000}
+#crosshair:before{width:2px;height:18px;left:8px;top:0}#crosshair:after{height:2px;width:18px;top:8px;left:0}
+#hotbar{position:absolute;bottom:calc(13px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:5px;max-width:96vw}
+.slot{width:49px;height:52px;border:2px solid #ffffff70;border-radius:9px;background:#17202bc9;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;gap:2px;flex-shrink:0}
+.slot b{font-size:21px;line-height:22px}.slot.active{border-color:#ffe66d;box-shadow:0 0 0 2px #ffe66d55;background:#344253e8}
+#controls{position:absolute;inset:0;pointer-events:none}
+#movePad{position:absolute;left:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:3px;pointer-events:auto}
+.ctrl{border:1px solid #ffffff55;background:#101a2bc2;color:white;border-radius:13px;font-size:20px;font-weight:800;touch-action:none;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center}
+#forward{grid-column:2;grid-row:1}#left{grid-column:1;grid-row:2}#back{grid-column:2;grid-row:2}#right{grid-column:3;grid-row:2}
+#actions{position:absolute;right:12px;bottom:calc(85px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:65px 65px;gap:8px;pointer-events:auto}
+#actions .ctrl{height:58px;font-size:12px;line-height:1.15;text-align:center;padding:4px}
+#jump{grid-column:2;grid-row:1;background:#24784dcc}#break{grid-column:1;grid-row:2;background:#9a472bcc}#place{grid-column:2;grid-row:2;background:#315f9dcc}
+#menu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(440px,92vw);background:#121a27f2;color:white;border:1px solid #ffffff50;border-radius:20px;padding:22px;text-align:center;box-shadow:0 15px 60px #0008}
+#menu h1{margin:0 0 5px;font-size:30px}#menu p{line-height:1.7;font-size:14px;color:#e3ebf4}
+button{font-family:inherit;cursor:pointer} .mainbtn{border:0;border-radius:12px;background:#ffd447;color:#17202b;font-weight:900;padding:13px 22px;font-size:16px;margin:5px}
+.smallbtn{border:1px solid #ffffff45;border-radius:10px;background:#253447;color:white;padding:9px 12px;margin:4px}
+#toast{position:absolute;top:112px;left:50%;transform:translateX(-50%);background:#101820d9;color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;pointer-events:none;opacity:0;transition:opacity .2s}
+@media(min-width:800px){#movePad{opacity:.75}#actions .ctrl{height:54px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="top">
+ <div class="panel"><div id="brand">🧱 KANAAN CRAFT</div><div style="font-size:11px;opacity:.85">عالم المكعبات • نسخة تجريبية</div></div>
+ <div class="panel" id="stats">💎 البلورات: <span id="crystals">0</span><br>🧱 المكعبات: <span id="blocks">0</span><br>☀️ <span id="weather">نهار</span></div>
+</div>
+<div id="hint">حرّك الأزرار يسارًا • اسحب الشاشة لتغيير اتجاه النظر</div>
+<div id="crosshair"></div>
+<div id="toast"></div>
+<div id="controls">
+ <div id="movePad">
+  <button class="ctrl" id="forward" aria-label="أمام">▲</button>
+  <button class="ctrl" id="left" aria-label="يسار">◀</button>
+  <button class="ctrl" id="back" aria-label="خلف">▼</button>
+  <button class="ctrl" id="right" aria-label="يمين">▶</button>
+ </div>
+ <div id="actions">
+  <button class="ctrl" id="jump">⬆️<br>قفز</button>
+  <button class="ctrl" id="break">⛏️<br>كسر</button>
+  <button class="ctrl" id="place">🧱<br>بناء</button>
+ </div>
+</div>
+<div id="hotbar"></div>
+<div id="menu">
+ <h1>🧱 KANAAN CRAFT</h1>
+ <p>ابنِ عالمك واستكشفه! اجمع البلورات، اكسر المكعبات، وابنِ مبانيك الخاصة.<br><b>التحكم:</b> أزرار الحركة + اسحب الشاشة للنظر + اختر مكعبًا من الشريط.</p>
+ <button class="mainbtn" id="start">ابدأ اللعب</button>
+ <button class="smallbtn" id="newworld">🌎 عالم جديد</button>
+ <p style="font-size:11px;opacity:.7;margin-bottom:0">تحتاج إلى اتصال بالإنترنت لتحميل محرك الرسوم ثلاثية الأبعاد.</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(() => {
+ const root=document.getElementById('game'), menu=document.getElementById('menu');
+ if(!window.THREE){document.querySelector('#menu p').textContent='تعذر تحميل محرك 3D. تأكد من اتصال الإنترنت ثم أعد فتح الملف.';return;}
+ const scene=new THREE.Scene(); scene.background=new THREE.Color(0x87ceeb); scene.fog=new THREE.Fog(0x87ceeb,18,58);
+ const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,120);
+ const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.7)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=false; renderer.outputColorSpace=THREE.SRGBColorSpace; root.appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xcceaff,0x58613c,2.0));
+ const sun=new THREE.DirectionalLight(0xfff0ce,2.1); sun.position.set(-12,24,10); scene.add(sun);
+ const materials={
+  grass:new THREE.MeshLambertMaterial({color:0x58a83b}), dirt:new THREE.MeshLambertMaterial({color:0x80512f}),
+  stone:new THREE.MeshLambertMaterial({color:0x8b929b}), sand:new THREE.MeshLambertMaterial({color:0xd9c27b}),
+  wood:new THREE.MeshLambertMaterial({color:0x98602e}), leaves:new THREE.MeshLambertMaterial({color:0x2d853a}),
+  brick:new THREE.MeshLambertMaterial({color:0xb95642}), crystal:new THREE.MeshLambertMaterial({color:0x51e6ff,emissive:0x0a7899,emissiveIntensity:.6})
+ };
+ const types=[['grass','🌿','عشب'],['dirt','🟫','تراب'],['stone','🪨','حجر'],['wood','🪵','خشب'],['leaves','🌳','أوراق'],['brick','🧱','طوب'],['sand','🏖️','رمل']];
+ let selected='grass',world=[],crystalMeshes=[],crystals=0,started=false,day=0,worldCount=0;
+ const geo=new THREE.BoxGeometry(1,1,1), key=(x,y,z)=>`${x},${y},${z}`;
+ const blockMap=new Map();
+ function addBlock(x,y,z,type,register=true){
+  const k=key(x,y,z); if(blockMap.has(k))return false;
+  const m=new THREE.Mesh(geo,materials[type]||materials.grass); m.position.set(x,y,z);m.userData={x,y,z,type};scene.add(m);blockMap.set(k,m);if(register)world.push(k);return true;
+ }
+ function removeBlockAt(x,y,z){const k=key(x,y,z),m=blockMap.get(k);if(!m)return false;scene.remove(m);blockMap.delete(k);world=world.filter(a=>a!==k);return true;}
+ function clearWorld(){for(const m of blockMap.values())scene.remove(m);blockMap.clear();world=[];for(const c of crystalMeshes)scene.remove(c);crystalMeshes=[];}
+ function tree(x,z){for(let y=1;y<=3;y++)addBlock(x,y,z,'wood');for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(let dy=3;dy<=4;dy++){if(Math.abs(dx)+Math.abs(dz)<3)addBlock(x+dx,dy,z+dz,'leaves');}}
+ function makeWorld(){
+  clearWorld();crystals=0;document.getElementById('crystals').textContent=0;
+  const size=18;
+  for(let x=-size;x<=size;x++)for(let z=-size;z<=size;z++){
+   const h=Math.floor(Math.sin(x*.34)*1.1+Math.cos(z*.28)*1.1+Math.sin((x+z)*.17)*.7);
+   for(let y=-3;y<=h;y++){let t=y===h?(h<=-1?'sand':'grass'):(y<-1?'stone':'dirt');addBlock(x,y,z,t);}
+  }
+  for(let i=0;i<24;i++){const x=Math.floor(Math.random()*29)-14,z=Math.floor(Math.random()*29)-14;if(Math.abs(x)>3||Math.abs(z)>3)tree(x,z);}
+  // crystal pickups
+  for(let i=0;i<13;i++){const x=Math.floor(Math.random()*25)-12,z=Math.floor(Math.random()*25)-12;
+   const c=new THREE.Mesh(new THREE.OctahedronGeometry(.34,0),materials.crystal);c.position.set(x,2.3,z);c.userData.pickup=true;scene.add(c);crystalMeshes.push(c);}
+  camera.position.set(0,2.6,5);yaw=0;pitch=-.12;vy=0;updateCounts();toast('عالم جديد جاهز! ابحث عن البلورات الزرقاء 💎');
+ }
+ function updateCounts(){document.getElementById('blocks').textContent=blockMap.size;}
+ const hotbar=document.getElementById('hotbar');
+ types.forEach(([id,icon,name])=>{const b=document.createElement('button');b.className='slot'+(id===selected?' active':'');b.innerHTML=`<b>${icon}</b><span>${name}</span>`;b.onclick=()=>{selected=id;document.querySelectorAll('.slot').forEach(s=>s.classList.remove('active'));b.classList.add('active');};hotbar.appendChild(b);});
+ let yaw=0,pitch=-.12,vy=0,onGround=false;const keys={};let moveSpeed=5.1;
+ function bindHold(id,k){const el=document.getElementById(id);const down=e=>{e.preventDefault();keys[k]=true;};const up=e=>{e.preventDefault();keys[k]=false;};el.addEventListener('pointerdown',down);['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,up));}
+ bindHold('forward','w');bindHold('back','s');bindHold('left','a');bindHold('right','d');
+ document.getElementById('jump').addEventListener('pointerdown',e=>{e.preventDefault();if(onGround){vy=7.2;onGround=false;}});
+ let lastTouch=null;
+ renderer.domElement.addEventListener('pointerdown',e=>{if(!started)return;lastTouch={x:e.clientX,y:e.clientY,id:e.pointerId};});
+ renderer.domElement.addEventListener('pointermove',e=>{if(!lastTouch||lastTouch.id!==e.pointerId)return;const dx=e.clientX-lastTouch.x,dy=e.clientY-lastTouch.y;yaw-=dx*.006;pitch-=dy*.005;pitch=Math.max(-1.25,Math.min(1.15,pitch));lastTouch={x:e.clientX,y:e.clientY,id:e.pointerId};});
+ ['pointerup','pointercancel'].forEach(ev=>renderer.domElement.addEventListener(ev,()=>lastTouch=null));
+ document.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key===' '&&onGround){vy=7.2;onGround=false;}if(e.key>='1'&&e.key<='7'){const i=+e.key-1;selected=types[i][0];document.querySelectorAll('.slot').forEach((s,j)=>s.classList.toggle('active',i===j));}if(e.key.toLowerCase()==='e')placeBlock();if(e.key.toLowerCase()==='q')breakBlock();});
+ document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+ const raycaster=new THREE.Raycaster();raycaster.far=6;
+ function targetBlock(){camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);raycaster.setFromCamera(new THREE.Vector2(0,0),camera);const hits=raycaster.intersectObjects([...blockMap.values()],false);return hits[0]||null;}
+ function breakBlock(){const hit=targetBlock();if(!hit)return;const p=hit.object.position;if(p.y<=-3)return;removeBlockAt(p.x,p.y,p.z);updateCounts();}
+ function placeBlock(){const hit=targetBlock();if(!hit)return;const n=hit.face.normal;const p=hit.object.position;const x=Math.round(p.x+n.x),y=Math.round(p.y+n.y),z=Math.round(p.z+n.z);if(Math.abs(x-camera.position.x)<1&&Math.abs(z-camera.position.z)<1&&Math.abs(y-camera.position.y)<2)return;if(addBlock(x,y,z,selected)){updateCounts();}}
+ document.getElementById('break').addEventListener('pointerdown',e=>{e.preventDefault();breakBlock();});
+ document.getElementById('place').addEventListener('pointerdown',e=>{e.preventDefault();placeBlock();});
+ let toastTimer;function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.opacity=0,2100);}
+ document.getElementById('start').onclick=()=>{started=true;menu.style.display='none';toast('انطلق! اسحب الشاشة لتغيير اتجاه النظر.');};
+ document.getElementById('newworld').onclick=()=>{makeWorld();started=true;menu.style.display='none';};
+ function collides(px,py,pz){const x=Math.round(px),z=Math.round(pz);for(let y=Math.floor(py-1.65);y<=Math.floor(py-.15);y++){if(blockMap.has(key(x,y,z))&&Math.abs(px-x)<.78&&Math.abs(pz-z)<.78)return true;}return false;}
+ let prev=performance.now();
+ function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-prev)/1000,.04);prev=now;
+  for(const c of crystalMeshes){c.rotation.y+=dt*1.2;c.rotation.x+=dt*.4;if(c.visible&&c.position.distanceTo(camera.position)<1.35){c.visible=false;crystals++;document.getElementById('crystals').textContent=crystals;toast('جمعت بلورة! 💎');}}
+  if(started){
+   camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
+   const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+   let dx=0,dz=0;if(keys.w||keys.arrowup){dx+=forward.x;dz+=forward.z;}if(keys.s||keys.arrowdown){dx-=forward.x;dz-=forward.z;}if(keys.a||keys.arrowleft){dx-=right.x;dz-=right.z;}if(keys.d||keys.arrowright){dx+=right.x;dz+=right.z;}
+   const len=Math.hypot(dx,dz)||1;dx=dx/len*moveSpeed*dt;dz=dz/len*moveSpeed*dt;
+   const nx=camera.position.x+dx,nz=camera.position.z+dz;
+   if(!collides(nx,camera.position.y,camera.position.z))camera.position.x=nx;
+   if(!collides(camera.position.x,camera.position.y,nz))camera.position.z=nz;
+   vy-=17*dt;camera.position.y+=vy*dt;
+   const groundY=surfaceY(camera.position.x,camera.position.z)+1.62;
+   if(camera.position.y<groundY){camera.position.y=groundY;vy=0;onGround=true;}else onGround=false;
+   if(camera.position.y<-8){camera.position.set(0,4,5);vy=0;toast('عدت إلى نقطة البداية!');}
+  } else {camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);}
+  day+=dt*.025;const sunUp=(Math.sin(day)+1)/2;sun.intensity=.55+sunUp*1.9;scene.background.setHSL(.56,.55,.28+sunUp*.35);scene.fog.color.copy(scene.background);document.getElementById('weather').textContent=sunUp>.35?'نهار':'ليل';
+  renderer.render(scene,camera);
+ }
+ function surfaceY(x,z){const ix=Math.round(x),iz=Math.round(z);for(let y=8;y>=-3;y--){if(blockMap.has(key(ix,y,iz)))return y+.5;}return -2.5;}
+ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+ makeWorld();requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
